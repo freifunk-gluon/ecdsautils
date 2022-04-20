@@ -135,6 +135,12 @@ regenerate:
 void ecdsa_verify_prepare_legacy(ecdsa_verify_context_t *ctx, const ecc_int256_t *hash, const ecdsa_signature_t *signature) {
   ecc_int256_t w, u1, tmp;
 
+  if (ecc_25519_gf_is_zero(&signature->s) || ecc_25519_gf_is_zero(&signature->r)) {
+    // Signature is invalid, mark by setting ctx->r to an invalid value
+    memset(&ctx->r, 0, sizeof(ctx->r));
+    return;
+  }
+
   ctx->r = signature->r;
 
   ecc_25519_gf_recip(&w, &signature->s);
@@ -148,6 +154,10 @@ void ecdsa_verify_prepare_legacy(ecdsa_verify_context_t *ctx, const ecc_int256_t
 bool ecdsa_verify_legacy(const ecdsa_verify_context_t *ctx, const ecc_25519_work_t *pubkey) {
   ecc_25519_work_t s2, work;
   ecc_int256_t w, tmp;
+
+  // Signature was detected as invalid in prepare step
+  if (ecc_25519_gf_is_zero(&ctx->r))
+    return false;
 
   ecc_25519_scalarmult(&s2, &ctx->u2, pubkey);
   ecc_25519_add(&work, &ctx->s1, &s2);
