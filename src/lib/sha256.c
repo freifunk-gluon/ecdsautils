@@ -176,16 +176,6 @@ void ecdsa_sha256_init(ecdsa_sha256_context_t *sc)
 	sc->bufferLength = 0L;
 }
 
-static void burnStack(int size)
-{
-	char buf[128];
-
-	memset(buf, 0, sizeof(buf));
-	size -= sizeof(buf);
-	if (size > 0)
-		burnStack(size);
-}
-
 static void SHA256Guts(ecdsa_sha256_context_t *sc, const uint32_t *cbuf)
 {
 	uint32_t buf[64];
@@ -392,7 +382,6 @@ void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t le
 {
 	uint32_t bufferBytesLeft;
 	uint32_t bytesToCopy;
-	int needBurn = 0;
 
 	if (sc->bufferLength) {
 		bufferBytesLeft = 64L - sc->bufferLength;
@@ -411,7 +400,6 @@ void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t le
 
 		if (sc->bufferLength == 64L) {
 			SHA256Guts(sc, sc->buffer.words);
-			needBurn = 1;
 			sc->bufferLength = 0L;
 		}
 	}
@@ -420,7 +408,6 @@ void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t le
 		sc->totalLength += 512L;
 
 		SHA256Guts(sc, data);
-		needBurn = 1;
 
 		data = ((uint8_t *) data) + 64L;
 		len -= 64L;
@@ -433,10 +420,6 @@ void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t le
 
 		sc->bufferLength += len;
 	}
-
-	if (needBurn)
-		burnStack(sizeof(uint32_t[74]) + sizeof(uint32_t *[6]) +
-			  sizeof(int));
 }
 
 void ecdsa_sha256_final(ecdsa_sha256_context_t *sc, uint8_t hash[ECDSA_SHA256_HASH_SIZE])
