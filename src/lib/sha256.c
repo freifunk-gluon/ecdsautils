@@ -39,6 +39,8 @@
 #define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
+#define IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
+
 #define Ch(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
 #define Maj(x, y, z) (((x) & ((y) | (z))) | ((y) & (z)))
 #define SIGMA0(x) (ROTR((x), 2) ^ ROTR((x), 13) ^ ROTR((x), 22))
@@ -378,6 +380,8 @@ static void SHA256Guts(ecdsa_sha256_context_t *sc, const uint32_t *cbuf)
 	sc->hash[7] += h;
 }
 
+
+
 void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t len)
 {
 	uint32_t bufferBytesLeft;
@@ -405,9 +409,16 @@ void ecdsa_sha256_update(ecdsa_sha256_context_t *sc, const void *data, size_t le
 	}
 
 	while (len > 63L) {
+		uint32_t words[64 / sizeof(uint32_t)];
+
 		sc->totalLength += 512L;
 
-		SHA256Guts(sc, data);
+		if (IS_ALIGNED(data, sizeof(uint32_t))) {
+			SHA256Guts(sc, data);
+		} else {
+			memcpy(words, data, sizeof(words));
+			SHA256Guts(sc, words);
+		}
 
 		data = ((uint8_t *) data) + 64L;
 		len -= 64L;
