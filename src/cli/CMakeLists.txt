@@ -3,7 +3,11 @@ add_definitions(-DECDSAUTIL_VERSION="${ECDSAUTIL_VERSION}")
 
 add_executable(ecdsautil ecdsautil.c keygen.c sign.c verify.c hexutil.c random.c version.c sha256_file.c set.c)
 
-set_target_properties(ecdsautil PROPERTIES COMPILE_FLAGS "-std=c99 -Wall ${LIBUECC_CFLAGS_OTHER}" LINK_FLAGS "${LIBUECC_LDFLAGS_OTHER}")
+set_target_properties(ecdsautil PROPERTIES
+  COMPILE_FLAGS "-std=c99 -Wall ${LIBUECC_CFLAGS_OTHER}"
+  LINK_FLAGS "${LIBUECC_LDFLAGS_OTHER}"
+  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
+)
 target_link_libraries(ecdsautil libecdsautil ${LIBUECC_LIBRARIES})
 
 install(TARGETS ecdsautil RUNTIME DESTINATION bin)
